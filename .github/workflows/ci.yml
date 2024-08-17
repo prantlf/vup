@@ -21,5 +21,6 @@ jobs:
       if: ${{ github.ref_name == 'master' }}
       with:
         no-archives: true
+        bump-files: install.sh,vup.sh
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
