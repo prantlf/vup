@@ -48,7 +48,7 @@ end_debug() {
 readonly INST_NAME=vup
 readonly LANG_NAME=V
 readonly TOOL_NAME=v
-readonly VERSION=0.0.1
+readonly VERSION=0.1.0
 
 readonly INST_DIR="${INST_DIR-$HOME/.$INST_NAME}"
 readonly NEW_PATH="\$HOME/.$INST_NAME:\$HOME/.$TOOL_NAME:\$PATH"
