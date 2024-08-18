@@ -49,12 +49,12 @@ Start a new shell after the installer finishes. Or extend the `PATH` in the curr
 | `~/.vup` | directory with the installer script and versions of V |
 | `~/.v`   | symbolic link to the currently active version of V    |
 
-For example, with the V 0.4.7 activated:
+For example, with the V weekly.2024.32 activated:
 
     /home/prantlf/.vup
-      ├── 0.4.7          (another version)
-      ├── vup            (installer script)
-      └── weekly.2024.32 (linked to /home/prantlf/.v)
+      ├── 0.4.7           (another version)
+      ├── vup             (installer script)
+      └── weekly.2024.32  (linked to /home/prantlf/.v)
 
 ## Usage
 

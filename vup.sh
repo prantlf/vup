@@ -194,36 +194,36 @@ detect_platform() {
     aarch64 | armv8 | armv8l)
         ARCH=arm64
         ;;
-    x86_64)
-        ARCH=amd64
+    x86_64 | amd64)
+        ARCH=x64
         ;;
     esac
 
-    if ! [[ " amd64 arm64 riscv64 " =~ [[:space:]]${ARCH}[[:space:]] ]]; then
+    if ! [[ " x64 arm64 riscv64 " =~ [[:space:]]${ARCH}[[:space:]] ]]; then
         fail unsupported "architecture $ARCH"
     fi
 
     PLATFORM=$OS-$ARCH
 
-    if [[ $PLATFORM = darwin-amd64 ]]; then
+    if [[ $PLATFORM = darwin-x64 ]]; then
         if [[ $(sysctl -n sysctl.proc_translated 2>/dev/null) = 1 ]]; then
             PLATFORM=darwin-arm64
             pass 'changing platform' "to $PLATFORM because Rosetta 2 was detected"
         fi
     fi
 
-    if ! [[ " darwin-amd64 darwin-arm64 linux-amd64 linux-arm64 linux-riscv64 windows-amd64 " =~ [[:space:]]${PLATFORM}[[:space:]] ]]; then
+    if ! [[ " darwin-x64 darwin-arm64 linux-x64 linux-arm64 linux-riscv64 windows-x64 " =~ [[:space:]]${PLATFORM}[[:space:]] ]]; then
         fail unsupported "platform $PLATFORM"
     fi
 
     local REPO_NAME
-    PKG_EXT=.zip
+    local PKG_EXT=.zip
 
     case $OS in
     darwin)
         REPO_NAME=vlang/v
         PKG_NAME=v_macos_
-        if [[ $ARCH = amd64 ]]; then
+        if [[ $ARCH = x64 ]]; then
             PKG_NAME="${PKG_NAME}x86_64"
         elif [[ $ARCH = arm64 ]]; then
             PKG_NAME="${PKG_NAME}arm64"
@@ -232,7 +232,7 @@ detect_platform() {
     linux)
         REPO_NAME=prantlf/docker-vlang
         PKG_NAME=v-linux-
-        if [[ $ARCH = amd64 ]]; then
+        if [[ $ARCH = x64 ]]; then
             PKG_NAME="${PKG_NAME}x64"
         elif [[ $ARCH = arm64 ]]; then
             PKG_NAME="${PKG_NAME}arm64"
@@ -283,12 +283,12 @@ download_tool_version() {
     command rm "$PKG_NAME" ||
         fail 'failed deleting' "$PKG_NAME"
     command mv "$INST_DIR/$VER/v" "$INST_DIR/$VER/dist" ||
-        fail 'failed renaming' "$INST_DIR/$VER/v to $INST_DIR/$VER/dist"
+        fail 'failed moving' "$INST_DIR/$VER/v to $INST_DIR/$VER/dist"
     readonly RETAIN=(cmd thirdparty vlib v v.mod)
     local FILE
     for FILE in "${RETAIN[@]}"; do
         command mv "$INST_DIR/$VER/dist/$FILE" "$INST_DIR/$VER/$FILE" ||
-            fail 'failed renaming' "$INST_DIR/$VER/dist/$FILE to $INST_DIR/$VER/$FILE"
+            fail 'failed moving' "$INST_DIR/$VER/dist/$FILE to $INST_DIR/$VER/$FILE"
     done
     command rm -r "$INST_DIR/$VER/dist" ||
         fail 'failed deleting' "$INST_DIR/$VER/dist"
@@ -361,7 +361,7 @@ get_latest_local_tool_version() {
 
     if [[ "${INST_LOCAL[*]}" != "" ]]; then
         local SORTED
-        SORTED=$(printf '%s\n' "${INST_LOCAL[*]}" | command sort -Vr) ||
+        SORTED=$(printf '%s\n' "${INST_LOCAL[@]}" | command sort -Vr) ||
             fail 'failed sorting' "versions: ${INST_LOCAL[*]}"
         read -r TOOL_VER < <(echo "${SORTED[@]}")
     else
