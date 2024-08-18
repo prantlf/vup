@@ -482,7 +482,7 @@ update_installer() {
         else
             TRACE=
         fi
-        readonly INST_URL="${INST_URL-$INST_ROOT_URL/$INST_NAME.sh}"
+        readonly INST_URL="${INST_URL-$INST_ROOT_URL/install.sh}"
         start_debug "downloading $INST_URL"
         command curl -f "$PROGRESS" "$INST_URL" | NO_INSTRUCTIONS=1 bash $TRACE ||
             fail 'failed downloading and executing' "$INST_URL"
