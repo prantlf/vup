@@ -1,5 +1,11 @@
 # Changes
 
+## [0.1.2](https://github.com/prantlf/vup/compare/v0.1.1...v0.1.2) (2024-08-18)
+
+### Bug Fixes
+
+* Download install.sh when updating the installer ([f2bd8c6](https://github.com/prantlf/vup/commit/f2bd8c678240585742e601edb026d022e5c5cbfd))
+
 ## [0.1.1](https://github.com/prantlf/vup/compare/v0.1.0...v0.1.1) (2024-08-18)
 
 ### Bug Fixes
