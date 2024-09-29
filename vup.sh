@@ -180,75 +180,98 @@ check_sort_exists() {
 }
 
 detect_platform() {
-    check_uname_exists
+    local UNAME
+    PLATFORM=${PLATFORM-}
+    if [ -z "$PLATFORM" ]; then
+        check_uname_exists
 
-    read -ra UNAME < <(command uname -ms)
-    OS=${UNAME[0],,}
-    ARCH=${UNAME[1],,}
+        OS=${OS-}
+        ARCH=${ARCH-}
+        if [ -z "$OS" ] || [ -z "$ARCH" ]; then
+            local UNAME
+            read -ra UNAME < <(command uname -ms)
+            if [ -z "$OS" ]; then
+                OS=${UNAME[0],,}
+            fi
+            if [ -z "$ARCH" ]; then
+                ARCH=${UNAME[1],,}
+            fi
+        fi
 
-    if ! [[ ' darwin linux windows ' =~ [[:space:]]${OS}[[:space:]] ]]; then
-        fail unsupported "operating system $OS"
-    fi
+        if ! [[ ' darwin linux windows ' =~ [[:space:]]${OS}[[:space:]] ]]; then
+            fail unsupported "operating system $OS"
+        fi
 
-    case $ARCH in
-    aarch64 | armv8 | armv8l)
-        ARCH=arm64
-        ;;
-    x86_64 | amd64)
-        ARCH=x64
-        ;;
-    esac
+        case $ARCH in
+        aarch64 | armv8 | armv8l)
+            ARCH=arm64
+            ;;
+        x86_64 | amd64)
+            ARCH=x64
+            ;;
+        esac
 
-    if ! [[ " x64 arm64 riscv64 " =~ [[:space:]]${ARCH}[[:space:]] ]]; then
-        fail unsupported "architecture $ARCH"
-    fi
+        if ! [[ " x64 arm64 riscv64 " =~ [[:space:]]${ARCH}[[:space:]] ]]; then
+            fail unsupported "architecture $ARCH"
+        fi
 
-    PLATFORM=$OS-$ARCH
+        PLATFORM=$OS-$ARCH
 
-    if [[ $PLATFORM = darwin-x64 ]]; then
-        if [[ $(sysctl -n sysctl.proc_translated 2>/dev/null) = 1 ]]; then
-            PLATFORM=darwin-arm64
-            pass 'changing platform' "to $PLATFORM because Rosetta 2 was detected"
+        if [[ $PLATFORM = darwin-x64 ]]; then
+            if [[ $(sysctl -n sysctl.proc_translated 2>/dev/null) = 1 ]]; then
+                PLATFORM=darwin-arm64
+                pass 'changing platform' "to $PLATFORM because Rosetta 2 was detected"
+            fi
+        fi
+
+        if ! [[ " darwin-x64 darwin-arm64 linux-x64 linux-arm64 linux-riscv64 windows-x64 " =~ [[:space:]]${PLATFORM}[[:space:]] ]]; then
+            fail unsupported "platform $PLATFORM"
+        fi
+    else
+        IFS='-' read -ra UNAME <<< "$PLATFORM"
+        OS=${UNAME[0],,}
+        if [ -z "$OS" ]; then
+            fail unrecognised "operating system in $PLATFORM"
+        fi
+        ARCH=${UNAME[1],,}
+        if [ -z "$OS" ]; then
+            fail unrecognised "architecture in $PLATFORM"
         fi
     fi
 
-    if ! [[ " darwin-x64 darwin-arm64 linux-x64 linux-arm64 linux-riscv64 windows-x64 " =~ [[:space:]]${PLATFORM}[[:space:]] ]]; then
-        fail unsupported "platform $PLATFORM"
-    fi
-
     local REPO_NAME
-    local PKG_EXT=.zip
+    local FILE_EXT=.zip
 
     case $OS in
     darwin)
         REPO_NAME=vlang/v
-        PKG_NAME=v_macos_
+        FILE_NAME=v_macos_
         if [[ $ARCH = x64 ]]; then
-            PKG_NAME="${PKG_NAME}x86_64"
+            FILE_NAME="${FILE_NAME}x86_64"
         elif [[ $ARCH = arm64 ]]; then
-            PKG_NAME="${PKG_NAME}arm64"
+            FILE_NAME="${FILE_NAME}arm64"
         fi
         ;;
     linux)
         REPO_NAME=prantlf/docker-vlang
-        PKG_NAME=v-linux-
+        FILE_NAME=v-linux-
         if [[ $ARCH = x64 ]]; then
-            PKG_NAME="${PKG_NAME}x64"
+            FILE_NAME="${FILE_NAME}x64"
         elif [[ $ARCH = arm64 ]]; then
-            PKG_NAME="${PKG_NAME}arm64"
+            FILE_NAME="${FILE_NAME}arm64"
         elif [[ $ARCH = riscv64 ]]; then
-            PKG_NAME="${PKG_NAME}riscv64"
+            FILE_NAME="${FILE_NAME}riscv64"
         fi
         ;;
     windows)
         REPO_NAME=vlang/v
-        PKG_NAME=v_windows
+        FILE_NAME=v_windows
         ;;
     esac
 
-    REPO_URL="https://github.com/$REPO_NAME"
-    API_URL="https://api.github.com/repos/$REPO_NAME"
-    PKG_NAME="$PKG_NAME$PKG_EXT"
+    REPO_URL=${REPO_URL-https://github.com/$REPO_NAME}
+    API_URL=${API_URL-https://api.github.com/repos/$REPO_NAME}
+    PKG_NAME=${PKG_NAME-$FILE_NAME$FILE_EXT}
 
     pass 'detected' "platform $PLATFORM"
 }

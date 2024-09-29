@@ -16,6 +16,8 @@ Make sure that you have `bash` 4 or newer and `curl` available, execute the foll
 
     curl -fSs https://raw.githubusercontent.com/prantlf/vup/master/install.sh | bash
 
+Before you continue, make sure that you have the following tools available: `curl`, `grep`, `jq`, `ln`, `rm`, `rmdir`, `sed`, `tar` (non-Windows), `uname`, `unxz` (non-Windows), `unzip` (Windows). It's likely that `jq` will be missing. You can install it like this on Debian: `apt-get install -y jq`.
+
 Install the latest version of V, if it hasn't been installed yet:
 
     vup install latest
