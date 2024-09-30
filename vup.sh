@@ -393,11 +393,12 @@ find_remote_tool_version_by_arg() {
     TOOL_URL_PKG=${TOOL_URL_PKG-$TOOL_URL_DIR/v$VER/$PKG_NAME}
 }
 
-remove_version_arg_from_local_tool_versions() {
+remove_from_local_tool_versions() {
+    local VER=$1
     local OLD_LOCAL=("${INST_LOCAL[@]}")
     INST_LOCAL=()
     for DIR in "${OLD_LOCAL[@]}"; do
-        if [[ "$DIR" != "$ARG" ]]; then
+        if [[ "$DIR" != "$VER" ]]; then
             INST_LOCAL+=("$DIR")
         fi
     done
@@ -482,6 +483,8 @@ ensure_tool_directory_link() {
         try_current_tool_version
         if [[ "$TOOL_CUR_VER" != "$VER" ]]; then
             link_tool_version_directory "$VER"
+        else
+            ignore 'already current' "$VER"
         fi
     fi
 }
@@ -521,7 +524,7 @@ delete_tool_version() {
     local VER=$1
     command rm -r "$INST_DIR/$VER" ||
         fail 'failed deleting' "$INST_DIR/$VER"
-    pass deleted "$VER"
+    pass deleted "$INST_DIR/$VER"
 }
 
 upgrade_tool_version() {
@@ -617,10 +620,18 @@ uninstall_tool_version() {
         fi
     else
         delete_tool_version "$TOOL_VER"
+        remove_from_local_tool_versions "$TOOL_VER"
     fi
 
     try_current_tool_version
-    if [ -n "$TOOL_CUR_VER" ] && [[ "$TOOL_CUR_VER" = "$TOOL_VER" ]]; then
+    if [ -z "$TOOL_CUR_VER" ]; then
+        get_latest_local_tool_version
+        if [ -n "$TOOL_VER" ]; then
+            link_tool_version_directory "$TOOL_VER"
+        else
+            ignore 'all versions have been deleted' ''
+        fi
+    elif [[ "$TOOL_CUR_VER" = "$TOOL_VER" ]]; then
         command rm "$TOOL_DIR" ||
             fail 'failed deleting' "$TOOL_DIR"
         get_local_tool_versions
@@ -630,6 +641,8 @@ uninstall_tool_version() {
         else
             announce deleted "the latest $LANG_NAME version"
         fi
+    else
+        ignore 'kept current' "$TOOL_CUR_VER"
     fi
 }
 
@@ -649,10 +662,9 @@ use_tool_version() {
     get_local_tool_version_by_arg 1
     check_local_tool_version_exists
 
-    get_current_tool_version
-    if [[ "$TOOL_CUR_VER" != "$TOOL_VER" ]]; then
+    try_current_tool_version
+    if [ -z "$TOOL_CUR_VER" ] || [[ "$TOOL_CUR_VER" != "$TOOL_VER" ]]; then
         link_tool_version_directory "$TOOL_VER"
-        pass activated "$TOOL_VER"
     else
         ignore 'already active' "$TOOL_VER"
     fi
