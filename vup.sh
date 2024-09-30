@@ -117,7 +117,7 @@ check_tool_directory_exists() {
     fi
 }
 
-get_current_tool_version() {
+try_current_tool_version() {
     # TOOL_CUR_VER=$(command $TOOL_NAME tool dist version) ||
     #     fail 'failed getting' 'the current version of $LANG_NAME"
     if [ -e "$TOOL_DIR" ]; then
@@ -130,6 +130,13 @@ get_current_tool_version() {
         fi
         TOOL_CUR_VER=${BASH_REMATCH[1]}
     else
+        TOOL_CUR_VER=
+    fi
+}
+
+get_current_tool_version() {
+    try_current_tool_version
+    if [ -z "$TOOL_CUR_VER" ]; then
         fail 'not found' "any version in $TOOL_DIR"
     fi
 }
@@ -402,7 +409,7 @@ get_local_tool_version_by_arg() {
 
 exists_local_tool_version() {
     local VER=$1
-    if [[ " ${INST_LOCAL[*]} " =~ [[:space:]]${VER}[[:space:]] ]]; then
+    if [ -n "$VER" ] && [[ " ${INST_LOCAL[*]} " =~ [[:space:]]${VER}[[:space:]] ]]; then
         VER_EXISTS=1
     else
         VER_EXISTS=
@@ -412,7 +419,11 @@ exists_local_tool_version() {
 check_local_tool_version_exists() {
     exists_local_tool_version "$TOOL_VER"
     if [[ "$VER_EXISTS" = "" ]]; then
-        fail 'not found' "$INST_DIR/$TOOL_VER"
+        if [[ "$TOOL_VER" = "" ]]; then
+            fail 'not found' "any version in $INST_DIR"
+        else
+            fail 'not found' "$INST_DIR/$TOOL_VER"
+        fi
     fi
 }
 
@@ -422,7 +433,7 @@ ensure_tool_directory_link() {
     if [[ "$TOOL_EXISTS" = "" ]]; then
         link_tool_version_directory "$VER"
     else
-        get_current_tool_version
+        try_current_tool_version
         if [[ "$TOOL_CUR_VER" != "$VER" ]]; then
             link_tool_version_directory "$VER"
         fi
@@ -549,11 +560,19 @@ uninstall_tool_version() {
     check_installer_directory_exists
     get_local_tool_versions
     get_local_tool_version_by_arg
-    check_local_tool_version_exists
-    get_current_tool_version
+    exists_local_tool_version "$TOOL_VER"
+    if [[ "$VER_EXISTS" = "" ]]; then
+        if [[ "$TOOL_VER" = "" ]]; then
+            fail 'not found' "any version in $INST_DIR"
+        else
+            fail 'not found' "$INST_DIR/$TOOL_VER"
+        fi
+    else
+        delete_tool_version "$TOOL_VER"
+    fi
 
-    delete_tool_version "$TOOL_VER"
-    if [[ "$TOOL_CUR_VER" = "$TOOL_VER" ]]; then
+    try_current_tool_version
+    if [ -n "$TOOL_CUR_VER" ] && [[ "$TOOL_CUR_VER" = "$TOOL_VER" ]]; then
         command rm "$TOOL_DIR" ||
             fail 'failed deleting' "$TOOL_DIR"
         get_local_tool_versions
