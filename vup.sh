@@ -363,6 +363,24 @@ link_tool_version_directory() {
     pass created "link $TOOL_DIR to $INST_DIR/$VER"
 }
 
+get_remote_tool_versions() {
+    local DESC=$1
+
+    check_jq_exists
+    check_sort_exists
+
+    readonly TOOL_URL_LIST="$API_URL/tags?per_page=100"
+    if [[ "$DESC" = "1" ]]; then
+        DESC="r"
+    else
+        DESC=""
+    fi
+    start_debug "downloading $TOOL_URL_LIST"
+    TOOL_REMOTE_VERSIONS=$(command curl -f "$PROGRESS" "$TOOL_URL_LIST" | command jq -r '.[].name' | command sort -V${DESC}) ||
+        fail 'failed downloading and processing' "the output from $TOOL_URL_LIST"
+    end_debug
+}
+
 get_latest_remote_version() {
     readonly TOOL_URL_LATEST=${TOOL_URL_LATEST-$API_URL/releases/latest}
     start_debug "downloading $TOOL_URL_LATEST"
@@ -377,7 +395,7 @@ get_latest_remote_version() {
 }
 
 find_remote_tool_version_by_arg() {
-    get_remote_versions
+    get_remote_tool_versions 1
 
     local LIST
     readarray -t LIST < <(echo "${TOOL_REMOTE_VERSIONS[@]}")
@@ -589,19 +607,11 @@ print_local_tool_versions() {
 }
 
 print_remote_tool_versions() {
-    local LIST
-
     check_curl_exists
-    check_jq_exists
-
+ 
     detect_platform
-
-    readonly TOOL_URL_LIST="$API_URL/tags?per_page=100"
-    start_debug "downloading $TOOL_URL_LIST"
-    LIST=$(command curl -f "$PROGRESS" "$TOOL_URL_LIST" | command jq -r '.[].name') ||
-        fail 'failed downloading and processing' "the output from $TOOL_URL_LIST"
-        end_debug
-    echo "$LIST"
+    get_remote_tool_versions 0
+    echo "${TOOL_REMOTE_VERSIONS[@]}"
 }
 
 uninstall_tool_version() {
